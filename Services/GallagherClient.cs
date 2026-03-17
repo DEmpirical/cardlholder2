@@ -73,4 +73,47 @@ public class GallagherClient
             throw;
         }
     }
+
+    public async Task CreateCardholderAsync(object cardholderData)
+    {
+        var json = JsonSerializer.Serialize(cardholderData);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        Console.WriteLine($"[GallagherClient] POST api/cardholders - Payload: {json}");
+        var response = await _http.PostAsync("api/cardholders", content);
+        Console.WriteLine($"[GallagherClient] POST Status: {(int)response.StatusCode}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<int> ImportCardholdersFromCsvAsync(Stream csvStream, CancellationToken cancellationToken = default)
+    {
+        using var reader = new StreamReader(csvStream);
+        var lines = await reader.ReadToEndAsync().Split('\n');
+        int imported = 0;
+        foreach (var line in lines)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+            var trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("firstName") || trimmed.StartsWith("first_name") || trimmed.StartsWith("id")) continue; // skip header/empty
+            var fields = trimmed.Split(',');
+            if (fields.Length < 2) continue;
+            var cardholder = new
+            {
+                firstName = fields[0].Trim(),
+                lastName = fields.Length > 1 ? fields[1].Trim() : "",
+                // Puedes mapear más campos según necesidad
+            };
+            try
+            {
+                await CreateCardholderAsync(cardholder);
+                imported++;
+                Console.WriteLine($"[GallagherClient] Imported {imported} cardholders");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GallagherClient] Failed to import cardholder: {ex.Message}");
+                // Continue with next
+            }
+        }
+        return imported;
+    }
 }

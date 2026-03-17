@@ -8,6 +8,8 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseStaticFiles(); // Serve wwwroot
+
 app.MapControllers();
 
 app.Run();
