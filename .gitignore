@@ -1,0 +1,18 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+
+## Configuración sensible
+appsettings.json
+# (appsettings.*.json would match example too, so be specific)
+
+## VS Code
+.vscode/
+
+## OS
+.DS_Store
+Thumbs.db
