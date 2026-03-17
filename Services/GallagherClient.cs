@@ -51,17 +51,26 @@ public class GallagherClient
 
     public async Task<JsonElement> GetCardholdersAsync(string? search = null, int? limit = null, int? offset = null)
     {
-        var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
-        if (!string.IsNullOrEmpty(search)) query["search"] = search!;
-        if (limit.HasValue) query["limit"] = limit.Value.ToString();
-        if (offset.HasValue) query["offset"] = offset.Value.ToString();
-        var queryString = query.ToString();
-        var url = string.IsNullOrWhiteSpace(queryString) ? "api/cardholders" : $"api/cardholders?{queryString}";
-
-        var response = await _http.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var stream = await response.Content.ReadAsStreamAsync();
-        using var document = await JsonDocument.ParseAsync(stream);
-        return document.RootElement.Clone();
+        try
+        {
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            if (!string.IsNullOrEmpty(search)) query["search"] = search!;
+            if (limit.HasValue) query["limit"] = limit.Value.ToString();
+            if (offset.HasValue) query["offset"] = offset.Value.ToString();
+            var queryString = query.ToString();
+            var url = string.IsNullOrWhiteSpace(queryString) ? "api/cardholders" : $"api/cardholders?{queryString}";
+            Console.WriteLine($"[GallagherClient] GET {url}");
+            var response = await _http.GetAsync(url);
+            Console.WriteLine($"[GallagherClient] Status: {(int)response.StatusCode}");
+            response.EnsureSuccessStatusCode();
+            var stream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(stream);
+            return document.RootElement.Clone();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GallagherClient] Exception: {ex.GetType().Name} - {ex.Message}");
+            throw;
+        }
     }
 }
