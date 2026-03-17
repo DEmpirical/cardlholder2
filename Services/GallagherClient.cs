@@ -56,7 +56,7 @@ public class GallagherClient
         if (limit.HasValue) query["limit"] = limit.Value.ToString();
         if (offset.HasValue) query["offset"] = offset.Value.ToString();
         var queryString = query.ToString();
-        var url = queryString ? $"api/cardholders?{queryString}" : "api/cardholders";
+        var url = string.IsNullOrWhiteSpace(queryString) ? "api/cardholders" : $"api/cardholders?{queryString}";
 
         var response = await _http.GetAsync(url);
         response.EnsureSuccessStatusCode();
