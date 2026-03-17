@@ -24,7 +24,9 @@ public class CardholdersController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = ex.Message });
+            // Log detailed error to console
+            Console.WriteLine($"[CardholdersController] Exception: {ex}");
+            return StatusCode(500, new { error = ex.Message, type = ex.GetType().Name });
         }
     }
 }
