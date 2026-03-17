@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "oZzK8wQ/UMmwTpJbCys1bgQhplCLhM2LtVyZjhsAXRw=",
+  "Hash": "fUUehirmEvusp2lq379ZKX9c9pLIdlsAgaBc0akMxJg=",
   "Source": "GallagherCardholders",
   "BasePath": "_content/GallagherCardholders",
   "Mode": "Default",
@@ -91,6 +91,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\index.html"
+    },
+    {
+      "Identity": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\index2.html",
+      "SourceId": "GallagherCardholders",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\",
+      "BasePath": "_content/GallagherCardholders",
+      "RelativePath": "index2.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\index2.html"
     },
     {
       "Identity": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\README.md",

@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardholder Management</title>
+  <style>
+    :root {
+      --bg: #1e1f23;
+      --bg-2: #222428;
+      --panel: #25272b;
+      --panel-2: #2c2f34;
+      --border: #3a3d42;
+      --text: #e6e7ea;
+      --muted: #a7abb3;
+      --muted-2: #81858d;
+      --orange: #ff8a00;
+      --blue: #7bb2ff;
+      --blue-2: #5e98eb;
+      --green: #66c26f;
+      --danger: #d95c5c;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --radius: 10px;
+      --radius-sm: 6px;
+      --sidebar-w: 72px;
+      --left-panel-w: 210px;
+      --drawer-w: 360px;
+      --font: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+    body { overflow: hidden; }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      height: 100vh;
+    }
+
+    .sidebar {
+      background: #111214;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      gap: 10px;
+    }
+
+    .brand {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff8a00, #d96d00);
+      display: grid;
+      place-items: center;
+      color: #111;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .side-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .side-btn.active,
+    .side-btn:hover {
+      background: #1d1f23;
+      border-color: var(--border);
+      color: #fff;
+    }
+
+    .side-spacer { flex: 1; }
+
+    .avatar-mini {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #4a4d53;
+      color: #ddd;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .topbar {
+      height: 50px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: linear-gradient(to bottom, rgba(255,255,255,.02), rgba(255,255,255,0));
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #d7d9de;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .feedback {
+      color: #8ec1ff;
+      font-size: 13px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .content {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .page {
+      display: none;
+      height: 100%;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* SEARCH PAGE */
+    .search-layout {
+      padding: 22px 20px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .search-box,
+    .select,
+    .input {
+      background: #1f2125;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      height: 38px;
+      padding: 0 12px;
+      outline: none;
+    }
+
+    .search-box {
+      width: 294px;
+      border-color: #8a4f12;
+      box-shadow: inset 0 0 0 1px rgba(255,138,0,.15);
+    }
+
+    .select { min-width: 154px; }
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #e7e8eb;
+      font-size: 14px;
+    }
+
+    .btn {
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #2b2e33;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn.primary {
+      background: #8ebcf8;
+      color: #13253f;
+      border-color: #8ebcf8;
+    }
+
+    .btn.ghost:hover,
+    .btn:hover { filter: brightness(1.05); }
+
+    .toolbar .spacer { flex: 1; }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1f2024;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #303238;
+      color: #f0f1f3;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid #34373c;
+      color: #dfe1e6;
+      font-size: 14px;
+    }
+
+    tbody tr:hover { background: #26292e; cursor: pointer; }
+
+    .chip-auth {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #d7f0d9;
+      color: #1f6a29;
+      font-weight: 700;
+    }
+
+    .initial-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      background: #595c62;
+      color: #e9eaed;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* WIZARD */
+    .wizard-shell {
+      padding: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      height: calc(100vh - 50px);
+    }
+
+    .wizard-body {
+      padding: 22px 24px;
+      overflow: auto;
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 8px 0 28px;
+      padding: 0 40px;
+    }
+
+    .stepper .line {
+      height: 2px;
+      flex: 1;
+      background: #666a70;
+      max-width: 180px;
+    }
+
+    .stepper .line.active {
+      background: #79b2ff;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 120px;
+      gap: 10px;
+      color: #8e939b;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .step .icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid #666a70;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      background: transparent;
+    }
+
+    .step.active { color: #8fc0ff; }
+    .step.active .icon {
+      border-color: #8fc0ff;
+      color: #8fc0ff;
+      background: rgba(123,178,255,.06);
+    }
+
+    .wizard-section {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #23252a;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: #dfe1e4;
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+
+    .req::after {
+      content: " *";
+      color: #d86666;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      background: #1f2125;
+      border: 1px solid #54575d;
+      color: #e9eaec;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    .field textarea {
+      resize: none;
+      min-height: 124px;
+    }
+
+    .inline-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 24px;
+    }
+
+    .wizard-footer {
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #1d1f23;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #6b95cf;
+      color: #9cc2f8;
+    }
+
+    .btn-next {
+      background: #8ebcf8;
+      border-color: #8ebcf8;
+      color: #12253d;
+      min-width: 92px;
+    }
+
+    .btn-disabled {
+      opacity: .4;
+      pointer-events: none;
+    }
+
+    .dual-panel {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 14px;
+      min-height: 380px;
+    }
+
+    .tree, .selection {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #202227;
+      padding: 14px;
+    }
+
+    .tree-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tree-list, .selection-list {
+      border: 1px solid #3b3e43;
+      border-radius: 6px;
+      min-height: 290px;
+      padding: 8px;
+      background: #1d1f24;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 4px;
+      color: #dfe2e7;
+      font-size: 14px;
+    }
+
+    .selection-card {
+      border: 1px solid #4a4d52;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #24262b;
+    }
+
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .summary-card {
+      border: 1px solid #44484d;
+      border-radius: 8px;
+      padding: 14px;
+      background: #24262a;
+      margin-bottom: 12px;
+    }
+
+    /* PROFILE PAGE */
+    .profile-layout {
+      display: grid;
+      grid-template-columns: var(--left-panel-w) 1fr;
+      height: calc(100vh - 50px);
+    }
+
+    .profile-aside {
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      background: #1f2024;
+    }
+
+    .profile-main {
+      padding: 0 16px 24px;
+      overflow: auto;
+    }
+
+    .avatar-big {
+      width: 62px;
+      height: 62px;
+      border-radius: 12px;
+      background: #5c6067;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 12px auto 10px;
+      color: #eceef1;
+    }
+
+    .profile-name {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .profile-block {
+      border-top: 1px solid var(--border);
+      padding: 14px 0;
+      color: #dfe1e6;
+      font-size: 13px;
+    }
+
+    .profile-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-height: 86px;
+      padding: 10px;
+      margin-top: 10px;
+      background: #22242a;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 38px;
+      height: 54px;
+      align-items: end;
+      border-bottom: 1px solid var(--border);
+      padding: 0 6px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      color: #9ca1aa;
+      font-size: 13px;
+      padding: 0 0 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab.active {
+      color: #eef0f3;
+      border-bottom-color: var(--orange);
+      font-weight: 700;
+    }
+
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+
+    .event-item {
+      border: 1px solid var(--border);
+      border-bottom: none;
+      padding: 12px;
+      background: #202227;
+      font-size: 13px;
+    }
+
+    .event-item:last-child {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .line-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #24262b;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .line-card .meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* drawer */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.42);
+      display: none;
+      z-index: 30;
+    }
+
+    .overlay.show { display: block; }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: var(--drawer-w);
+      height: 100vh;
+      background: #2a2c31;
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transform: translateX(100%);
+      transition: transform .22s ease;
+      z-index: 31;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.show { transform: translateX(0); }
+
+    .drawer-header {
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-weight: 700;
+    }
+
+    .drawer-body {
+      padding: 14px;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .drawer-footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .drawer-section {
+      border: 1px solid #45484e;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #26282d;
+    }
+
+    .drawer-section h4 {
+      margin: 0 0 12px;
+      font-size: 14px;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+
+    @media (max-width: 1100px) {
+      .profile-layout {
+        grid-template-columns: 1fr;
+      }
+      .profile-aside {
+        display: none;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .dual-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">⬢</div>
+      <button class="side-btn active" title="Buscar" onclick="showPage('searchPage')">⌕</button>
+      <button class="side-btn" title="Agregar" onclick="showPage('wizardPage')">👥</button>
+      <div class="side-spacer"></div>
+      <div class="avatar-mini">JA</div>
+      <button class="side-btn" title="Más">»</button>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div class="back">◉ <span>Back</span></div>
+        <div class="feedback">Feedback</div>
+      </header>
+
+      <div class="content">
+        <!-- SEARCH -->
+        <section id="searchPage" class="page active">
+          <div class="search-layout">
+            <div class="toolbar">
+              <input class="search-box" placeholder="Search" />
+              <select class="select">
+                <option>Name</option>
+                <option>Division</option>
+              </select>
+              <label class="checkbox"><input type="checkbox" /> Authorised Only</label>
+              <div class="spacer"></div>
+              <button class="btn primary" onclick="showPage('wizardPage')">＋ Add Cardholder</button>
+              <button class="btn ghost" onclick="reviewConfig()">Revisar configuración</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:50px"></th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Description</th>
+                    <th>Division</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr onclick="showPage('profilePage')">
+                    <td><div class="initial-badge">AA</div></td>
+                    <td>Andres</td>
+                    <td>Ardila</td>
+                    <td></td>
+                    <td>Root Division</td>
+                  </tr>
+                  <tr onclick="showPage('profilePage')">
+                    <td><div class="initial-badge">JA</div></td>
+                    <td>Jaime</td>
+                    <td>Avella</td>
+                    <td></td>
+                    <td>Visitor Division</td>
+                  </tr>
+                  <tr onclick="showPage('profilePage')">
+                    <td><div class="initial-badge">PP</div></td>
+                    <td>Pedro</td>
+                    <td>Paez</td>
+                    <td>Testarosa</td>
+                    <td>Visitor Division</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="configStatus" class="panel" style="display:none; margin-top:16px;">
+              <div class="page-title">Estado backend</div>
+              <div class="page-subtitle">Chequeo simple a <span class="muted">/api/cardholders?limit=10</span></div>
+              <pre id="configPre" class="small" style="white-space:pre-wrap; color:#d9e7ff;"></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- WIZARD -->
+        <section id="wizardPage" class="page">
+          <div class="wizard-shell">
+            <div class="wizard-body">
+              <div class="stepper">
+                <div class="step active"><div class="icon">👤</div><div>User Details</div></div>
+                <div class="line active"></div>
+                <div class="step"><div class="icon">🏢</div><div>Assign Access</div></div>
+                <div class="line"></div>
+                <div class="step"><div class="icon">✓</div><div>Additional Details</div></div>
+                <div class="line"></div>
+                <div class="step"><div class="icon">💳</div><div>Issue Credentials</div></div>
+                <div class="line"></div>
+                <div class="step"><div class="icon">☰</div><div>Summary</div></div>
+              </div>
+
+              <div class="wizard-section">
+                <div class="page-title">Cardholder Details</div>
+                <div class="page-subtitle">Please fill out all the appropriate fields for the new cardholder.</div>
+
+                <div class="panel">
+                  <div class="form-grid">
+                    <div>
+                      <div class="field">
+                        <label class="req">First Name</label>
+                        <input value="" placeholder="" />
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label>Short Name</label>
+                        <input />
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label>Description</label>
+                        <textarea></textarea>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="field">
+                        <label class="req">Last Name</label>
+                        <input value="" />
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label class="req">Division</label>
+                        <select>
+                          <option>Root Division</option>
+                          <option>Visitor Division</option>
+                        </select>
+                      </div>
+                      <div class="inline-checks">
+                        <label class="checkbox"><input type="checkbox" /> Impaired mobility</label>
+                        <label class="checkbox"><input type="checkbox" /> Visually impaired</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <div class="page-title" style="font-size:14px;">Importación / creación rápida</div>
+                  <div class="page-subtitle">Puedes mantener este bloque como acceso directo a tu carga CSV masiva.</div>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn">Seleccionar CSV</button>
+                    <button class="btn ghost">Descargar plantilla</button>
+                    <button class="btn primary">Importar masivo</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wizard-footer">
+              <button class="btn btn-outline">Cancel</button>
+              <button class="btn">Back</button>
+              <button class="btn btn-next">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="profilePage" class="page">
+          <div class="profile-layout">
+            <aside class="profile-aside">
+              <div class="avatar-big">CV</div>
+              <div class="profile-name">Carlos Valderrama</div>
+              <div style="text-align:center; margin-bottom:12px;">
+                <span class="chip-auth">Authorised ✓</span>
+              </div>
+
+              <div class="profile-block">
+                <div class="profile-label">Division</div>
+                <div>Root Division</div>
+              </div>
+              <div class="profile-block">
+                <div class="profile-label">Last Zone Entered</div>
+                <div>Never accessed</div>
+              </div>
+              <div class="profile-block">
+                <div class="profile-label">Additional Information</div>
+                <div class="mini-card muted">Notes</div>
+              </div>
+            </aside>
+
+            <main class="profile-main">
+              <div class="tabs">
+                <div class="tab active" onclick="showTab('activityTab', this)">Activity</div>
+                <div class="tab" onclick="showTab('historyTab', this)">History</div>
+                <div class="tab" onclick="showTab('accessTab', this)">Access</div>
+                <div class="tab" onclick="showTab('credentialsTab', this)">Credentials</div>
+                <div class="tab" onclick="showTab('competenciesTab', this)">Competencies</div>
+                <div class="tab" onclick="showTab('detailsTab', this)">Details</div>
+              </div>
+
+              <div id="activityTab" class="tab-page active">
+                <div class="row-actions">
+                  <div class="page-title">Activity</div>
+                  <div class="muted small">Events displayed between 2025-10-14 19:07:04 and NOW</div>
+                </div>
+                <div class="event-item">2025-10-14 19:07:04 - membership activated for “Grupo de Acceso Prueba”</div>
+                <div class="event-item">2025-10-14 19:07:04 - Operator “Avella, Jaime” added cardholder “Valderrama, Carlos”</div>
+                <div class="event-item">2025-10-14 19:07:04 - Card activated / Card Type HID35</div>
+              </div>
+
+              <div id="historyTab" class="tab-page">
+                <div class="row-actions">
+                  <div class="page-title">History</div>
+                  <select class="select"><option>Latest</option></select>
+                </div>
+                <div class="event-item">Created cardholder — By Avella, Jaime on Web Client</div>
+                <div class="event-item">Added access group “Grupo de Acceso Prueba”</div>
+                <div class="event-item">Added card 11010100101 (“HID35”)</div>
+              </div>
+
+              <div id="accessTab" class="tab-page">
+                <div class="row-actions">
+                  <div>
+                    <div class="page-title">Access</div>
+                    <div class="page-subtitle">Assign, edit & remove Access Groups to this user.</div>
+                  </div>
+                  <button class="btn primary" onclick="openDrawer('accessDrawer')">＋ Assign Access</button>
+                </div>
+
+                <div class="line-card">
+                  <div>
+                    <div><strong>Grupo de Acceso Prueba</strong></div>
+                    <div class="meta">No description</div>
+                  </div>
+                  <div><span class="status-dot"></span>Active</div>
+                  <div class="meta">From: 14/10/2025 07:04 p. m. &nbsp;&nbsp; Until: 15/10/2025 07:04 p. m.</div>
+                </div>
+              </div>
+
+              <div id="credentialsTab" class="tab-page">
+                <div class="row-actions">
+                  <div>
+                    <div class="page-title">Credentials</div>
+                    <div class="page-subtitle">Assign, edit & remove Credentials to this user.</div>
+                  </div>
+                  <button class="btn primary" onclick="openDrawer('credentialDrawer')">＋ Assign Credential</button>
+                </div>
+
+                <div class="line-card">
+                  <div>
+                    <div><strong>HID35</strong></div>
+                    <div class="meta">11010100101 · Issue 1</div>
+                  </div>
+                  <div><span class="status-dot"></span>Active</div>
+                  <div class="meta">From: dd/mm/aaaa --:-- ---- &nbsp;&nbsp; Until: dd/mm/aaaa --:-- ----</div>
+                </div>
+              </div>
+
+              <div id="competenciesTab" class="tab-page">
+                <div class="row-actions">
+                  <div>
+                    <div class="page-title">Competencies</div>
+                    <div class="page-subtitle">Assign, edit & remove Competencies to this user.</div>
+                  </div>
+                  <button class="btn primary" onclick="openDrawer('competencyDrawer')">＋ Assign Competency</button>
+                </div>
+                <div class="panel muted">No competencies assigned yet.</div>
+              </div>
+
+              <div id="detailsTab" class="tab-page">
+                <div class="page-title">Details</div>
+                <div class="page-subtitle">View and edit all details associated to the Cardholder.</div>
+
+                <div class="panel">
+                  <div class="form-grid">
+                    <div>
+                      <div class="field">
+                        <label>First Name</label>
+                        <input value="Carlos" />
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label>Description</label>
+                        <textarea></textarea>
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label class="req">CEDULA</label>
+                        <input value="10101001" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="field">
+                        <label>Last Name</label>
+                        <input value="Valderrama" />
+                      </div>
+                      <div class="field" style="margin-top:14px;">
+                        <label>Division</label>
+                        <select><option>Root Division</option></select>
+                      </div>
+                      <div class="inline-checks">
+                        <label class="checkbox"><input type="checkbox" /> Impaired mobility</label>
+                        <label class="checkbox"><input type="checkbox" /> Visually impaired</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="overlay" class="overlay" onclick="closeDrawers()"></div>
+
+  <aside id="accessDrawer" class="drawer">
+    <div class="drawer-header">» Assign Access</div>
+    <div class="drawer-body">
+      <div class="dual-panel">
+        <div class="tree">
+          <div class="tree-header">
+            <input class="input" placeholder="Search Access Groups..." />
+            <select class="select"><option>All Divisions</option></select>
+          </div>
+          <div class="tree-list">
+            <div class="tree-item"><input type="checkbox" /> General Visitor Access</div>
+            <div class="tree-item"><input type="checkbox" /> General Visitor Type Group</div>
+            <div class="tree-item"><input type="checkbox" checked /> Grupo de Acceso Prueba</div>
+            <div class="tree-item"><input type="checkbox" /> Turno Jueves</div>
+            <div class="tree-item"><input type="checkbox" /> Turno Viernes</div>
+          </div>
+        </div>
+        <div class="selection">
+          <div class="selection-list">
+            <div class="selection-card">
+              <strong>Grupo de Acceso Prueba</strong>
+              <div class="meta">No description</div>
+              <div class="date-row">
+                <input class="input" value="14/10/2025 07:04 p. m." />
+                <input class="input" value="15/10/2025 07:04 p. m." />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawers()">Cancel</button>
+      <button class="btn btn-next" onclick="closeDrawers()">Done</button>
+    </div>
+  </aside>
+
+  <aside id="credentialDrawer" class="drawer">
+    <div class="drawer-header">» Issue Credential</div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <h4>Credential</h4>
+        <div class="field">
+          <label>Type</label>
+          <select><option>HID35</option></select>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <h4>Details</h4>
+        <div class="field">
+          <label class="req">Card Number</label>
+          <input />
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Issue Number</label>
+          <input value="1" />
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>State</label>
+          <select><option>Active</option></select>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>From</label>
+          <input placeholder="dd/mm/aaaa --:-- ----" />
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Until</label>
+          <input placeholder="dd/mm/aaaa --:-- ----" />
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawers()">Cancel</button>
+      <button class="btn btn-next" onclick="closeDrawers()">Done</button>
+    </div>
+  </aside>
+
+  <aside id="competencyDrawer" class="drawer">
+    <div class="drawer-header">» Assign Competencies</div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="row-actions" style="margin-bottom:10px;">
+          <h4 style="margin:0;">Assign Competencies</h4>
+          <span class="small muted">2 Selected</span>
+        </div>
+        <input class="input" placeholder="Search" />
+        <div class="selection-card" style="margin-top:12px;">
+          <label class="checkbox"><input type="checkbox" checked /> Lunch</label>
+        </div>
+        <div class="selection-card">
+          <label class="checkbox"><input type="checkbox" checked /> Transporte</label>
+          <div class="field" style="margin-top:10px;">
+            <label>Expiry Date</label>
+            <input value="15/10/2025 11:59 p. m." />
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label>Comment</label>
+            <input />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawers()">Cancel</button>
+      <button class="btn btn-next" onclick="closeDrawers()">Done</button>
+    </div>
+  </aside>
+
+  <script>
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+
+      document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+      if (id === 'searchPage') document.querySelectorAll('.side-btn')[0].classList.add('active');
+      if (id === 'wizardPage') document.querySelectorAll('.side-btn')[1].classList.add('active');
+      if (id === 'profilePage') document.querySelectorAll('.side-btn')[1].classList.add('active');
+    }
+
+    function showTab(tabId, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function openDrawer(id) {
+      document.getElementById('overlay').classList.add('show');
+      document.getElementById(id).classList.add('show');
+    }
+
+    function closeDrawers() {
+      document.getElementById('overlay').classList.remove('show');
+      document.querySelectorAll('.drawer').forEach(d => d.classList.remove('show'));
+    }
+
+    async function reviewConfig() {
+      const box = document.getElementById('configStatus');
+      const pre = document.getElementById('configPre');
+      box.style.display = 'block';
+      pre.textContent = 'Consultando backend...';
+
+      try {
+        const res = await fetch('http://localhost:5000/api/cardholders?limit=10');
+        const text = await res.text();
+
+        if (!res.ok) {
+          pre.textContent = `ERROR HTTP ${res.status}\n\n${text}`;
+          return;
+        }
+
+        pre.textContent = `✅ Backend disponible\n\n${text}`;
+      } catch (err) {
+        pre.textContent = `❌ No fue posible consultar el backend.\n\n${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

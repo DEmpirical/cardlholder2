@@ -1,335 +1,188 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallagher Cardholder Importer</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning: #d97706;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-500: #6b7280;
-            --gray-800: #1f2937;
-            --radius: 12px;
-        }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--gray-100);
-            color: var(--gray-800);
-            min-height: 100vh;
-            padding: 2rem;
-        }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 2rem; }
-        .header h1 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
-        .header p { color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-        .card-header {
-            background: var(--gray-50);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card-body { padding: 1.5rem; }
-
-        .form-group { margin-bottom: 1.25rem; }
-        label { display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; }
-        input[type="text"], input[type="password"], select {
-            width: 100%; padding: 0.75rem; border:1px solid var(--gray-200); border-radius: 8px;
-            font-size: 1rem; transition: border 0.2s;
-        }
-        input:focus, select:focus {
-            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
-
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 0.75rem 1.5rem; border: none; border-radius: 8px;
-            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-            gap: 0.5rem;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn:disabled { opacity:0.6; cursor:not-allowed; }
-
-        .dropzone {
-            border: 2px dashed var(--gray-200); border-radius: var(--radius); padding: 3rem;
-            text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa;
-        }
-        .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: rgba(37,99,235,0.05); }
-        .dropzone-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--gray-500); }
-        .dropzone p { margin-bottom: 1rem; color: var(--gray-500); }
-
-        .step-indicator {
-            display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
-        }
-        .step {
-            display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;
-            background: var(--gray-200); border-radius: 20px; font-size: 0.9rem;
-        }
-        .step.active { background: var(--primary); color: white; }
-        .step.completed { background: var(--success); color: white; }
-
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;
-        }
-        .stat-card {
-            background: white; padding: 1rem; border-radius: 8px;
-            text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
-        .stat-label { font-size: 0.85rem; color: var(--gray-500); margin-top: 0.25rem; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
-        th { background: var(--gray-50); font-weight: 600; font-size: 0.85rem; color: var(--gray-500); text-transform: uppercase; }
-        tr:hover { background: var(--gray-50); }
-        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-        .badge-success { background: #dcfce7; color: #166534; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-
-        .progress-bar { height: 12px; background: var(--gray-200); border-radius: 6px; overflow: hidden; margin-top: 1rem; }
-        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
-
-        .log-console {
-            background: #1f2937; color: #10b981; padding: 1rem; border-radius: 8px;
-            font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto;
-            white-space: pre-wrap;
-        }
-
-        .hidden { display: none !important; }
-
-        .alert {
-            padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
-        }
-        .alert-success { background: #dcfce7; color: #166534; }
-        .alert-danger { background: #fee2e2; color: #991b1b; }
-        .alert-info { background: #dbeafe; color: #1e40af; }
-
-        .mapping-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
-        .mapping-row label { min-width: 180px; margin: 0; font-weight: 500; }
-        .mapping-row select { flex: 1; }
-        .field-required::after { content:" *"; color: var(--danger); }
-    </style>
+<meta charset="UTF-8">
+<title>Gallagher Cardholder Importer</title>
+<style>
+body { font-family: Arial; background:#f3f4f6; padding:20px; }
+.container { max-width:900px; margin:auto; }
+.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
+.btn { padding:10px 15px; border:none; border-radius:6px; cursor:pointer; }
+.btn-primary { background:#2563eb; color:white; }
+.btn-success { background:#16a34a; color:white; }
+.dropzone { border:2px dashed #ccc; padding:30px; text-align:center; cursor:pointer; }
+.progress { height:10px; background:#ddd; border-radius:5px; margin-top:10px; }
+.progress-fill { height:100%; width:0%; background:#2563eb; }
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔐 Gallagher Cardholder Importer</h1>
-            <p>Carga masiva de cardholders desde CSV</p>
-        </div>
+<div class="container">
 
-        <div class="step-indicator" id="stepIndicator">
-            <div class="step active" data-step="config">1. Configuración</div>
-            <div class="step" data-step="upload">2. Cargar CSV</div>
-            <div class="step" data-step="validate">3. Validar</div>
-            <div class="step" data-step="import">4. Importar</div>
-        </div>
+<h2>🔐 Gallagher Cardholder Importer</h2>
 
-        <!-- CONFIG -->
-        <div id="configScreen" class="card">
-            <div class="card-header">⚙️ Configuración de API</div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <span>ℹ️</span>
-                    <span> Necesitas un token de API de Gallagher Command Centre con permisos de escritura.</span>
-                </div>
-                <div class="form-group">
-                    <label for="apiHost">Host de Gallagher CC</label>
-                    <input type="text" id="apiHost" placeholder="https://gallagher-server:8443">
-                    <small style="color:var(--gray-500)">Incluye https:// y puerto</small>
-                </div>
-                <div class="form-group">
-                    <label for="apiKey">API Key / Bearer Token</label>
-                    <input type="password" id="apiKey" placeholder="Tu token de API">
-                </div>
-                <button class="btn btn-primary" onclick="testAndContinue()">
-                    🔗 Probar conexión y continuar →
-                </button>
-            </div>
-        </div>
+<!-- BOTÓN NUEVO -->
+<div class="card">
+    <button class="btn btn-primary" onclick="checkBackend()">
+        🔍 Revisar configuración backend
+    </button>
+    <pre id="backendStatus"></pre>
+</div>
 
-        <!-- UPLOAD -->
-        <div id="uploadScreen" class="card hidden">
-            <div class="card-header">📁 Subir Archivo CSV</div>
-            <div class="card-body">
-                <div class="dropzone" id="dropzone">
-                    <div class="dropzone-icon">📄</div>
-                    <p><strong>Arrastra tu archivo CSV aquí</strong> o haz clic para seleccionar</p>
-                    <input type="file" id="csvFile" accept=".csv" hidden>
-                    <button class="btn btn-primary" onclick="document.getElementById('csvFile').click()">
-                        Seleccionar archivo
-                    </button>
-                </div>
-                <div id="fileInfo" class="alert alert-info hidden">
-                    <span id="fileName"></span>
-                    <button class="btn btn-danger" style="margin-left:auto;" onclick="clearFile()">✕</button>
-                </div>
-                <div id="previewSection" class="hidden">
-                    <h3 style="margin:1.5rem 0 1rem;">Vista previa de datos</h3>
-                    <div class="alert alert-info" id="validationSummary">
-                        Analizando estructura del CSV...
-                    </div>
-                    <div id="csvPreview"></div>
-                    <button class="btn btn-success" onclick="goToMapping()">
-                        Continuar → Asignar campos
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- UPLOAD -->
+<div class="card">
+    <h3>📁 Subir CSV</h3>
 
-        <!-- VALIDATE / MAPPING -->
-        <div id="validateScreen" class="card hidden">
-            <div class="card-header">
-                ✅ Validar Datos
-                <button class="btn btn-primary" onclick="startImport()">🚀 Iniciar Importación</button>
-            </div>
-            <div class="card-body">
-                <div class="validation-step">
-                    <h3>🗺️ Mapeo de Columnas</h3>
-                    <p style="color:var(--gray-500); margin-bottom:1rem;">
-                        Asigna cada columna de tu CSV a un campo de Gallagher. Los campos requeridos están marcados con *.
-                    </p>
-                    <div class="mapping-table" id="mappingForm"></div>
-                </div>
-                <div class="validation-step">
-                    <h3>📊 Resumen</h3>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="statTotal">0</div>
-                            <div class="stat-label">Total filas</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statReady">0</div>
-                            <div class="stat-label">Listas para importar</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statMissing">0</div>
-                            <div class="stat-label">Faltan datos requeridos</div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-primary" onclick="goToUpload()">← Volver</button>
-            </div>
-        </div>
-
-        <!-- IMPORT PROGRESS -->
-        <div id="importScreen" class="card hidden">
-            <div class="card-header">
-                ⏳ Importación en progreso
-                <span id="progressPercent">0%</span>
-            </div>
-            <div class="card-body">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="progressTotal">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="progressSuccess">0</div>
-                        <div class="stat-label">Éxitos</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="progressFailed">0</div>
-                        <div class="stat-label">Fallos</div>
-                    </div>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- HISTORY -->
-        <div id="historyScreen" class="card hidden">
-            <div class="card-header">
-                📜 Historial de Importaciones
-                <button class="btn btn-primary" onclick="loadHistory()">🔄 Actualizar</button>
-            </div>
-            <div class="card-body">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Archivo</th>
-                            <th>Total</th>
-                            <th>Éxitos</th>
-                            <th>Fallos</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTable">
-                        <tr><td colspan="7" style="text-align:center;color:var(--gray-500);">No hay registros</td></tr>
-                    </tbody>
-                </table>
-                <button class="btn btn-primary" onclick="goToConfig()" style="margin-top:1rem;">← Volver al inicio</button>
-            </div>
-        </div>
-
-        <!-- LOGS -->
-        <div id="logsScreen" class="card hidden">
-            <div class="card-header">
-                📋 Consola de Logs
-                <button class="btn btn-primary" onclick="clearLogs()">🗑️ Limpiar</button>
-            </div>
-            <div class="card-body">
-                <div class="log-console" id="consoleLog">[Sistema] Inicializando aplicación...</div>
-            </div>
-        </div>
-
-        <!-- ERROR MODAL -->
-        <div id="errorModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;">
-            <div class="card" style="max-width:500px;width:100%;">
-                <div class="card-header">⚠️ Error</div>
-                <div class="card-body">
-                    <p id="errorMessage"></p>
-                    <button class="btn btn-primary" onclick="closeError()">Entendido</button>
-                </div>
-            </div>
-        </div>
+    <div class="dropzone" onclick="fileInput.click()">
+        Click o arrastra CSV
     </div>
 
-    <script>
-const state = { csvData: null, headers: [], mapping: {}, fileName: '', logs: [] };
-function log(msg) { const ts = new Date().toLocaleTimeString(); state.logs.unshift(`[${ts}] ${msg}`); renderLogs(); }
-function renderLogs() { const el = document.getElementById('consoleLog'); if (el) el.textContent = state.logs.join('\n'); }
-function showError(msg) { alert(msg); }
-function setActiveScreen(id) { const screens = ['uploadScreen','validateScreen','importScreen','historyScreen','logsScreen']; screens.forEach(s => document.getElementById(s).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
-function updateStepIndicator(stepName) { const steps = ['upload','validate','import']; document.querySelectorAll('.step').forEach((el,i) => { el.classList.remove('active','completed'); if (steps[i]===stepName) el.classList.add('active'); }); }
-function initDropzone() { const dropzone = document.getElementById('dropzone'); if (!dropzone) return; dropzone.addEventListener('click',()=>document.getElementById('csvFile').click()); dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('dragover');}); dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('dragover')); dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('dragover');const file=e.dataTransfer.files[0];if(file)handleFile(file);}); document.getElementById('csvFile').addEventListener('change',e=>{const file=e.target.files[0];if(file)handleFile(file);}); }
-function handleFile(file) { if (!file.name.endsWith('.csv')) { showError('Solo archivos CSV'); return; } state.fileName = file.name; document.getElementById('fileInfo').classList.remove('hidden'); document.getElementById('fileName').textContent = file.name; const reader = new FileReader(); reader.onload = e => { state.csvData = parseCSV(e.target.result); state.headers = Object.keys(state.csvData[0]||{}); showPreview(); updateStepIndicator('validate'); }; reader.readAsText(file); }
-function parseCSV(text) { const lines = text.trim().split('\n'); if (lines.length<2) return []; const headers = lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'')); const data = []; for(let i=1;i<lines.length;i++){ const vals = lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,'')); const row = {}; headers.forEach((h,idx)=>row[h]=vals[idx]||''); data.push(row); } return data; }
-function showPreview() { const preview = document.getElementById('csvPreview'); if (!preview) return; if (!state.csvData||state.csvData.length===0) { preview.innerHTML='<p>Archivo vacío</p>'; return; } let html = '<table><thead><tr>'; state.headers.forEach(h=>html+=`<th>${h}</th>`); html += '</tr></thead><tbody>'; state.csvData.slice(0,10).forEach(row=>{ html+='<tr>'; state.headers.forEach(h=>html+=`<td>${row[h]}</td>`); html+='</tr>'; }); html += '</tbody></table>'; html += `<p style="margin-top:1rem;color:var(--gray-500);">Mostrando 10 de ${state.csvData.length} registros</p>`; preview.innerHTML = html; }
-function clearFile() { state.csvData=null; state.fileName=''; document.getElementById('csvFile').value=''; document.getElementById('fileInfo').classList.add('hidden'); document.getElementById('previewSection').classList.add('hidden'); }
-function generateMappingForm() { const container = document.getElementById('mappingForm'); if (!container) return; const fields = [ {key:'firstName',label:'First Name',required:true}, {key:'lastName',label:'Last Name',required:true}, {key:'cardNumber',label:'Card Number'}, {key:'email',label:'Email'}, {key:'phone',label:'Phone'}, {key:'companyId',label:'Company ID'}, {key:'siteCode',label:'Site Code'} ]; let html = ''; state.headers.forEach(h => { const id = `map-${h.replace(/\s/g,'-')}`; html += `<div class="mapping-row"><label for="${id}">${h}</label><select id="${id}" onchange="state.mapping['${h}']=this.value"><option value="">-- Ignorar --</option>`; fields.forEach(f=>html+=`<option value="${f.key}">${f.label}${f.required?' *':''}</option>`); html += '</select></div>'; }); container.innerHTML = html; state.headers.forEach(h => { const l = h.toLowerCase(); const sel = document.getElementById(`map-${h.replace(/\s/g,'-')}`); if (!sel) return; if (l.includes('first')||l.includes('nombre')||l.includes('given')) sel.value='firstName'; else if (l.includes('last')||l.includes('apellido')||l.includes('surname')) sel.value='lastName'; else if (l.includes('card')||l.includes('tarjeta')) sel.value='cardNumber'; else if (l.includes('email')||l.includes('correo')) sel.value='email'; else if (l.includes('phone')||l.includes('tel')) sel.value='phone'; }); }
-function validateMapping() { const ok = state.mapping && Object.values(state.mapping).includes('firstName') && Object.values(state.mapping).includes('lastName'); const el = document.getElementById('statReady'); if (el) el.textContent = ok ? (state.csvData?.length||0) : 0; return ok; }
-function buildCardholder(row) { const get = col => row[state.mapping[col]] || ''; const card = { firstName: get('firstName'), lastName: get('lastName') }; const email = get('email'); if (email) card.email = email; const phone = get('phone'); if (phone) card.phone = phone; const companyId = get('companyId'); if (companyId) card.companyId = companyId; const siteCode = get('siteCode'); if (siteCode) card.siteCode = siteCode; const cardNumber = get('cardNumber'); if (cardNumber) card.cards = [{ cardNumber, cardType: 'Default' }]; return card; }
-async function startImport() { if (!validateMapping()) { showError('Mapea First y Last'); return; } const fileInput = document.getElementById('csvFile'); if (!fileInput.files[0]) { showError('No hay archivo'); return; } setActiveScreen('importScreen'); const total = state.csvData.length; let success = 0, failed = 0; const els = document.querySelectorAll('.stat-value'); if (els[0]) els[0].textContent = total; if (els[1]) els[1].textContent = '0'; if (els[2]) els[2].textContent = '0'; const fill = document.getElementById('progressFill'); const pct = document.getElementById('progressPercent'); for (let i=0; i<total; i++) { try { const card = buildCardholder(state.csvData[i]); const resp = await fetch('/api/cardholders', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(card) }); if (!resp.ok) throw new Error(`HTTP ${resp.status}`); success++; } catch(e) { failed++; console.error(e); } const percent = Math.round(((i+1)/total)*100); if (fill) fill.style.width = percent+'%'; if (pct) pct.textContent = percent+'%'; if (els[1]) els[1].textContent = success; if (els[2]) els[2].textContent = failed; } saveImportRecord(state.fileName,total,success,failed,failed===0?'completed':'partial'); log(`[Import] ${success} OK, ${failed} FAIL`); loadHistory(); setTimeout(()=>setActiveScreen('historyScreen'),2000); }
-function saveImportRecord(fileName,total,success,failed,status) { const recs = JSON.parse(localStorage.getItem('import_history')||'[]'); recs.unshift({date:new Date().toISOString(),fileName,total,success,failed,status}); localStorage.setItem('import_history',JSON.stringify(recs.slice(0,50))); }
-function loadHistory() { const recs = JSON.parse(localStorage.getItem('import_history')||'[]'); const tbody = document.getElementById('historyTable'); if (!tbody) return; if (recs.length===0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-500);">No hay registros</td></tr>'; return; } tbody.innerHTML = recs.map(r=>`<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.fileName}</td><td>${r.total}</td><td><span class="badge badge-success">${r.success}</span></td><td><span class="badge badge-danger">${r.failed}</span></td><td><span class="badge ${r.status==='completed'?'badge-success':'badge-warning'}">${r.status}</span></td></tr>`).join(''); }
-function init() { initDropzone(); setActiveScreen('uploadScreen'); updateStepIndicator('upload'); loadHistory(); log('[Sistema] Aplicación lista'); }
-document.addEventListener('DOMContentLoaded', init);
+    <input type="file" id="fileInput" accept=".csv" hidden>
+
+    <div id="preview"></div>
+
+    <button class="btn btn-success" onclick="generateMapping()">
+        Continuar → Mapear
+    </button>
+</div>
+
+<!-- MAPPING -->
+<div class="card" id="mappingCard" style="display:none;">
+    <h3>🗺️ Mapping</h3>
+    <div id="mappingForm"></div>
+    <button class="btn btn-success" onclick="startImport()">🚀 Importar</button>
+</div>
+
+<!-- PROGRESS -->
+<div class="card" id="progressCard" style="display:none;">
+    <h3>⏳ Importando...</h3>
+    <div id="progressText"></div>
+    <div class="progress">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+</div>
+
+</div>
+
+<script>
+let state = {
+    data: [],
+    headers: [],
+    mapping: {}
+};
+
+const fileInput = document.getElementById("fileInput");
+
+fileInput.onchange = e => handleFile(e.target.files[0]);
+
+function handleFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = e => {
+        const text = e.target.result;
+        const lines = text.split("\n");
+
+        const headers = lines[0].split(",").map(h => h.trim());
+        state.headers = headers;
+
+        state.data = lines.slice(1).map(l => {
+            const vals = l.split(",");
+            let obj = {};
+            headers.forEach((h,i)=>obj[h]=vals[i]||"");
+            return obj;
+        });
+
+        renderPreview();
+    };
+
+    reader.readAsText(file);
+}
+
+function renderPreview() {
+    const preview = document.getElementById("preview");
+
+    preview.innerHTML = `
+        <p>Filas: ${state.data.length}</p>
+        <pre>${JSON.stringify(state.data.slice(0,3), null, 2)}</pre>
+    `;
+}
+
+function generateMapping() {
+    const form = document.getElementById("mappingForm");
+    document.getElementById("mappingCard").style.display = "block";
+
+    const fields = ["firstName","lastName","email","cardNumber"];
+
+    form.innerHTML = state.headers.map(h => `
+        <div>
+            ${h}
+            <select onchange="state.mapping['${h}']=this.value">
+                <option value="">--</option>
+                ${fields.map(f=>`<option value="${f}">${f}</option>`).join("")}
+            </select>
+        </div>
+    `).join("");
+}
+
+function buildCardholder(row) {
+    let mapped = {};
+
+    for (const [csv, api] of Object.entries(state.mapping)) {
+        if (api && row[csv]) {
+            mapped[api] = row[csv];
+        }
+    }
+
+    return {
+        firstName: mapped.firstName || "",
+        lastName: mapped.lastName || "",
+        email: mapped.email,
+        cards: mapped.cardNumber ? [{cardNumber: mapped.cardNumber}] : undefined
+    };
+}
+
+async function startImport() {
+    document.getElementById("progressCard").style.display = "block";
+
+    let success = 0;
+
+    for (let i=0;i<state.data.length;i++) {
+        const card = buildCardholder(state.data[i]);
+
+        try {
+            await fetch("/api/cardholders", {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify(card)
+            });
+            success++;
+        } catch(e) {}
+
+        let percent = Math.round(((i+1)/state.data.length)*100);
+        document.getElementById("progressBar").style.width = percent+"%";
+        document.getElementById("progressText").innerText =
+            `${success}/${state.data.length}`;
+    }
+
+    alert("Import terminado");
+}
+
+async function checkBackend() {
+    const el = document.getElementById("backendStatus");
+
+    try {
+        const res = await fetch("http://localhost:5000/api/cardholders?limit=10");
+
+        if (!res.ok) throw new Error("HTTP " + res.status);
+
+        const data = await res.json();
+
+        el.innerText = "✅ Conectado\n" + JSON.stringify(data, null, 2);
+    } catch (e) {
+        el.innerText = "❌ Error conexión: " + e.message;
+    }
+}
 </script>
+
 </body>
 </html>

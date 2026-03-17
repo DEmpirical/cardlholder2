@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GallagherCardholders")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c9b6348f084b26ce196ecd949a77dd694cdf5f62")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2937b560bd6395743ad473a9389f55c120d889d2")]
 [assembly: System.Reflection.AssemblyProductAttribute("GallagherCardholders")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GallagherCardholders")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

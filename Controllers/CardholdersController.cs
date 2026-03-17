@@ -32,33 +32,34 @@ public class CardholdersController : ControllerBase
     }
 
     [HttpPost("import")]
-    public async Task<IActionResult> ImportCardholders(IFormFile csvFile, [FromForm] string mappingJson, CancellationToken cancellationToken)
+public async Task<IActionResult> ImportCardholders(IFormFile csvFile, [FromForm] string? mappingJson, CancellationToken cancellationToken)
+{
+    try
     {
-        try
+        if (csvFile == null || csvFile.Length == 0)
+            return BadRequest(new { error = "No file uploaded" });
+
+        Dictionary<string, string> mapping = string.IsNullOrWhiteSpace(mappingJson)
+            ? new Dictionary<string, string>()
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(mappingJson)
+              ?? new Dictionary<string, string>();
+
+        var result = await _importService.ImportFromCsvAsync(csvFile.OpenReadStream(), mapping, cancellationToken);
+
+        return Ok(new
         {
-            if (csvFile == null || csvFile.Length == 0)
-                return BadRequest(new { error = "No file uploaded" });
-
-            var mapping = string.IsNullOrEmpty(mappingJson)
-                ? new Dictionary<string, string>()
-                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(mappingJson);
-
-            var result = await _importService.ImportFromCsvAsync(csvFile.OpenReadStream(), mapping, cancellationToken);
-
-            return Ok(new
-            {
-                result.Imported,
-                result.Failed,
-                result.Total,
-                result.Errors
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[CardholdersController] Import error: {ex}");
-            return StatusCode(500, new { error = ex.Message, type = ex.GetType().Name });
-        }
+            result.Imported,
+            result.Failed,
+            result.Total,
+            result.Errors
+        });
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CardholdersController] Import error: {ex}");
+        return StatusCode(500, new { error = ex.Message, type = ex.GetType().Name });
+    }
+}
 
     [HttpPost("cardholders")]
     public async Task<IActionResult> CreateSingleCardholder([FromBody] object cardholderData)
