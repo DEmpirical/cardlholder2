@@ -20,6 +20,7 @@ public class GallagherClient
         _port = int.Parse(config["Gallagher:Port"] ?? "8443");
         _apiKey = config["Gallagher:ApiKey"] ?? throw new ArgumentNullException("Gallagher:ApiKey");
         _clientCertThumbprint = config["Gallagher:ClientCertificateThumbprint"];
+        // Fix: parse string to bool to avoid CS0029
         _ignoreServerCertificateErrors = bool.Parse(config["Gallagher:IgnoreServerCertificateErrors"] ?? "false");
 
         var handler = new HttpClientHandler();
