@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallagher Cardholder Importer</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-500: #6b7280;
+            --gray-800: #1f2937;
+            --radius: 12px;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-800);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .header p { color: var(--gray-500); }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .card-header {
+            background: var(--gray-50);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { padding: 1.5rem; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        label { display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; }
+        input[type="text"], input[type="password"], select {
+            width: 100%; padding: 0.75rem; border:1px solid var(--gray-200); border-radius: 8px;
+            font-size: 1rem; transition: border 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0.75rem 1.5rem; border: none; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            gap: 0.5rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+        .dropzone {
+            border: 2px dashed var(--gray-200); border-radius: var(--radius); padding: 3rem;
+            text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa;
+        }
+        .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: rgba(37,99,235,0.05); }
+        .dropzone-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--gray-500); }
+        .dropzone p { margin-bottom: 1rem; color: var(--gray-500); }
+
+        .step-indicator {
+            display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
+        }
+        .step {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;
+            background: var(--gray-200); border-radius: 20px; font-size: 0.9rem;
+        }
+        .step.active { background: var(--primary); color: white; }
+        .step.completed { background: var(--success); color: white; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: white; padding: 1rem; border-radius: 8px;
+            text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.85rem; color: var(--gray-500); margin-top: 0.25rem; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
+        th { background: var(--gray-50); font-weight: 600; font-size: 0.85rem; color: var(--gray-500); text-transform: uppercase; }
+        tr:hover { background: var(--gray-50); }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        .progress-bar { height: 12px; background: var(--gray-200); border-radius: 6px; overflow: hidden; margin-top: 1rem; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+
+        .log-console {
+            background: #1f2937; color: #10b981; padding: 1rem; border-radius: 8px;
+            font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .hidden { display: none !important; }
+
+        .alert {
+            padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .alert-success { background: #dcfce7; color: #166534; }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+        .alert-info { background: #dbeafe; color: #1e40af; }
+
+        .mapping-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+        .mapping-row label { min-width: 180px; margin: 0; font-weight: 500; }
+        .mapping-row select { flex: 1; }
+        .field-required::after { content:" *"; color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gallagher Cardholder Importer</h1>
+            <p>Carga masiva de cardholders desde CSV</p>
+        </div>
+
+        <div class="step-indicator" id="stepIndicator">
+            <div class="step active" data-step="config">1. Configuración</div>
+            <div class="step" data-step="upload">2. Cargar CSV</div>
+            <div class="step" data-step="validate">3. Validar</div>
+            <div class="step" data-step="import">4. Importar</div>
+        </div>
+
+        <!-- CONFIG -->
+        <div id="configScreen" class="card">
+            <div class="card-header">⚙️ Configuración de API</div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <span> Necesitas un token de API de Gallagher Command Centre con permisos de escritura.</span>
+                </div>
+                <div class="form-group">
+                    <label for="apiHost">Host de Gallagher CC</label>
+                    <input type="text" id="apiHost" placeholder="https://gallagher-server:8443">
+                    <small style="color:var(--gray-500)">Incluye https:// y puerto</small>
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">API Key / Bearer Token</label>
+                    <input type="password" id="apiKey" placeholder="Tu token de API">
+                </div>
+                <button class="btn btn-primary" onclick="testAndContinue()">
+                    🔗 Probar conexión y continuar →
+                </button>
+            </div>
+        </div>
+
+        <!-- UPLOAD -->
+        <div id="uploadScreen" class="card hidden">
+            <div class="card-header">📁 Subir Archivo CSV</div>
+            <div class="card-body">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">📄</div>
+                    <p><strong>Arrastra tu archivo CSV aquí</strong> o haz clic para seleccionar</p>
+                    <input type="file" id="csvFile" accept=".csv" hidden>
+                    <button class="btn btn-primary" onclick="document.getElementById('csvFile').click()">
+                        Seleccionar archivo
+                    </button>
+                </div>
+                <div id="fileInfo" class="alert alert-info hidden">
+                    <span id="fileName"></span>
+                    <button class="btn btn-danger" style="margin-left:auto;" onclick="clearFile()">✕</button>
+                </div>
+                <div id="previewSection" class="hidden">
+                    <h3 style="margin:1.5rem 0 1rem;">Vista previa de datos</h3>
+                    <div class="alert alert-info" id="validationSummary">
+                        Analizando estructura del CSV...
+                    </div>
+                    <div id="csvPreview"></div>
+                    <button class="btn btn-success" onclick="goToMapping()">
+                        Continuar → Asignar campos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VALIDATE / MAPPING -->
+        <div id="validateScreen" class="card hidden">
+            <div class="card-header">
+                ✅ Validar Datos
+                <button class="btn btn-primary" onclick="startImport()">🚀 Iniciar Importación</button>
+            </div>
+            <div class="card-body">
+                <div class="validation-step">
+                    <h3>🗺️ Mapeo de Columnas</h3>
+                    <p style="color:var(--gray-500); margin-bottom:1rem;">
+                        Asigna cada columna de tu CSV a un campo de Gallagher. Los campos requeridos están marcados con *.
+                    </p>
+                    <div class="mapping-table" id="mappingForm"></div>
+                </div>
+                <div class="validation-step">
+                    <h3>📊 Resumen</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTotal">0</div>
+                            <div class="stat-label">Total filas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statReady">0</div>
+                            <div class="stat-label">Listas para importar</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statMissing">0</div>
+                            <div class="stat-label">Faltan datos requeridos</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="goToUpload()">← Volver</button>
+            </div>
+        </div>
+
+        <!-- IMPORT PROGRESS -->
+        <div id="importScreen" class="card hidden">
+            <div class="card-header">
+                ⏳ Importación en progreso
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="progressTotal">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="progressSuccess">0</div>
+                        <div class="stat-label">Éxitos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="progressFailed">0</div>
+                        <div class="stat-label">Fallos</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="historyScreen" class="card hidden">
+            <div class="card-header">
+                📜 Historial de Importaciones
+                <button class="btn btn-primary" onclick="loadHistory()">🔄 Actualizar</button>
+            </div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Archivo</th>
+                            <th>Total</th>
+                            <th>Éxitos</th>
+                            <th>Fallos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr><td colspan="7" style="text-align:center;color:var(--gray-500);">No hay registros</td></tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary" onclick="goToConfig()" style="margin-top:1rem;">← Volver al inicio</button>
+            </div>
+        </div>
+
+        <!-- LOGS -->
+        <div id="logsScreen" class="card hidden">
+            <div class="card-header">
+                📋 Consola de Logs
+                <button class="btn btn-primary" onclick="clearLogs()">🗑️ Limpiar</button>
+            </div>
+            <div class="card-body">
+                <div class="log-console" id="consoleLog">[Sistema] Inicializando aplicación...</div>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div id="errorModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;">
+            <div class="card" style="max-width:500px;width:100%;">
+                <div class="card-header">⚠️ Error</div>
+                <div class="card-body">
+                    <p id="errorMessage"></p>
+                    <button class="btn btn-primary" onclick="closeError()">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            config: {
+                host: localStorage.getItem('gh_host') || '',
+                apiKey: localStorage.getItem('gh_api_key') || ''
+            },
+            csvData: null,
+            fileName: '',
+            headers: [],
+            mapping: {},
+            importId: null,
+            logs: [],
+            currentScreen: 'config',
+            stats: { total: 0, ready: 0, missing: 0 }
+        };
+
+        function log(msg) {
+            const ts = new Date().toLocaleTimeString();
+            state.logs.unshift(`[${ts}] ${msg}`);
+            if (state.logs.length > 200) state.logs.pop();
+            renderLogs();
+        }
+
+        function renderLogs() {
+            document.getElementById('consoleLog').textContent = state.logs.join('\n');
+        }
+
+        function clearLogs() {
+            state.logs = [];
+            renderLogs();
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMessage').textContent = msg;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        function setActiveScreen(screenId) {
+            ['configScreen','uploadScreen','validateScreen','importScreen','historyScreen','logsScreen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            state.currentScreen = screenId;
+        }
+
+        function updateStepIndicator(step) {
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active','completed');
+                if (el.dataset.step === step) el.classList.add('active');
+            });
+        }
+
+        // --- CONFIGURACIÓN ---
+        async function testAndContinue() {
+            const host = document.getElementById('apiHost').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+
+            if (!host || !apiKey) {
+                showError('Completa todos los campos');
+                return;
+            }
+
+            log('[Config] Probando conexión...');
+            try {
+                const response = await fetch(`${host}/api/status`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                state.config.host = host;
+                state.config.apiKey = apiKey;
+                localStorage.setItem('gh_host', host);
+                localStorage.setItem('gh_api_key', apiKey);
+
+                log('[Config] ✅ Conexión exitosa. Configuración guardada');
+                setActiveScreen('uploadScreen');
+                updateStepIndicator('upload');
+            } catch (error) {
+                log(`[Config] ❌ ${error.message}`);
+                showError(`No se pudo conectar: ${error.message}. Verifica el host y token.`);
+            }
+        }
+
+        // --- UPLOAD CSV ---
+        function initDropzone() {
+            const dropzone = document.getElementById('dropzone');
+            dropzone.addEventListener('click', () => document.getElementById('csvFile').click());
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault(); dropzone.classList.add('dragover');
+            });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault(); dropzone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0]; if (file) processFile(file);
+            });
+            document.getElementById('csvFile').addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (file) processFile(file);
+            });
+        }
+
+        function processFile(file) {
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                showError('Solo se permiten archivos CSV');
+                return;
+            }
+
+            state.fileName = file.name;
+            document.getElementById('fileInfo').classList.remove('hidden');
+            document.getElementById('fileName').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                state.csvData = parseCSV(text);
+                state.headers = Object.keys(state.csvData[0] || {});
+                showPreview();
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const row = {};
+                headers.forEach((h, idx) => row[h] = values[idx] || '');
+                data.push(row);
+            }
+            return data;
+        }
+
+        function showPreview() {
+            const preview = document.getElementById('csvPreview');
+            preview.innerHTML = '';
+
+            if (state.csvData.length === 0) {
+                preview.innerHTML = '<p style="color:var(--gray-500)">El archivo está vacío</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            state.headers.forEach(h => html += `<th>${h}</th>`);
+            html += '</tr></thead><tbody>';
+
+            state.csvData.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                state.headers.forEach(h => html += `<td>${row[h]}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            html += `<p style="margin-top:1rem;color:var(--gray-500);">Mostrando 10 de ${state.csvData.length} registros</p>`;
+            preview.innerHTML = html;
+            document.getElementById('previewSection').classList.remove('hidden');
+
+            updateValidationSummary();
+        }
+
+        function clearFile() {
+            state.csvData = null;
+            state.fileName = '';
+            document.getElementById('csvFile').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('previewSection').classList.add('hidden');
+        }
+
+        function updateValidationSummary() {
+            const summary = document.getElementById('validationSummary');
+            if (!state.csvData) {
+                summary.className = 'alert alert-info';
+                summary.innerHTML = '📊 Por favor, sube un archivo CSV para analizar.';
+                return;
+            }
+
+            const total = state.csvData.length;
+            const nameCols = detectNameColumns(state.headers);
+            const estimatedReady = Math.min(total, Math.max(1, Math.floor(total * 0.9)));
+
+            summary.className = 'alert alert-success';
+            summary.innerHTML = `
+                <strong>✅ Análisis completo:</strong><br>
+                • ${total} filas detectadas<br>
+                • Columnas encontradas: ${state.headers.join(', ')}<br>
+                • Columnas de nombre detectadas: ${nameCols.firstName || 'ninguna'}, ${nameCols.lastName || 'ninguna'}<br>
+                • Estimado de filas listas: ~${estimatedReady}
+            `;
+
+            state.stats = { total, ready: estimatedReady, missing: total - estimatedReady };
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statReady').textContent = estimatedReady;
+            document.getElementById('statMissing').textContent = total - estimatedReady;
+        }
+
+        function detectNameColumns(headers) {
+            const result = { firstName: null, lastName: null };
+            headers.forEach(h => {
+                const l = h.toLowerCase();
+                if (l.includes('first') || l.includes('nombre') || l.includes('given')) result.firstName = h;
+                if (l.includes('last') || l.includes('apellido') || l.includes('surname') || l.includes('family')) result.lastName = h;
+            });
+            return result;
+        }
+
+        function goToMapping() {
+            if (!state.csvData) return;
+            generateMappingForm();
+            setActiveScreen('validateScreen');
+            updateStepIndicator('validate');
+        }
+
+        function goToUpload() {
+            setActiveScreen('uploadScreen');
+            updateStepIndicator('upload');
+        }
+
+        function goToConfig() {
+            setActiveScreen('configScreen');
+            updateStepIndicator('config');
+        }
+
+        // --- MAPPING ---
+        function generateMappingForm() {
+            const form = document.getElementById('mappingForm');
+            const gallagherFields = [
+                { value: 'firstName', label: 'First Name (requerido)', required: true },
+                { value: 'lastName', label: 'Last Name (requerido)', required: true },
+                { value: 'cardNumber', label: 'Card Number' },
+                { value: 'accessGroup', label: 'Access Group Name' },
+                { value: 'companyId', label: 'Company ID' },
+                { value: 'email', label: 'Email' },
+                { value: 'phone', label: 'Phone' },
+                { value: 'siteCode', label: 'Site Code' }
+            ];
+
+            let html = '';
+            state.headers.forEach(header => {
+                const fieldId = `map-${header.replace(/\s/g, '-')}`;
+                html += `<div class="mapping-row">
+                    <label for="${fieldId}"><strong>${header}</strong></label>
+                    <select id="${fieldId}" onchange="updateMapping('${header}', this.value)">
+                        <option value="">-- Ignorar --</option>
+                        ${gallagherFields.map(f => `<option value="${f.value}">${f.label}${f.required ? ' <span class="field-required">*</span>' : ''}</option>`).join('')}
+                    </select>
+                </div>`;
+            });
+            form.innerHTML = html;
+
+            // Auto-detección
+            state.headers.forEach(header => {
+                const l = header.toLowerCase();
+                const select = document.getElementById(`map-${header.replace(/\s/g, '-')}`);
+                if (l.includes('first') || l.includes('nombre') || l.includes('given')) select.value = 'firstName';
+                else if (l.includes('last') || l.includes('apellido') || l.includes('surname')) select.value = 'lastName';
+                else if (l.includes('card') || l.includes('tarjeta') || l.includes('credencial')) select.value = 'cardNumber';
+                else if (l.includes('group') || l.includes('acceso') || l.includes('access')) select.value = 'accessGroup';
+                else if (l.includes('email') || l.includes('correo')) select.value = 'email';
+                else if (l.includes('phone') || l.includes('tel') || l.includes('mobile')) select.value = 'phone';
+            });
+
+            setTimeout(validateMapping, 100);
+        }
+
+        function updateMapping(header, value) {
+            state.mapping[header] = value;
+            validateMapping();
+        }
+
+        function validateMapping() {
+            const hasFirstName = Object.values(state.mapping).includes('firstName');
+            const hasLastName = Object.values(state.mapping).includes('lastName');
+            const ready = hasFirstName && hasLastName && state.csvData;
+            document.getElementById('statReady').textContent = ready ? state.csvData.length : 0;
+            return ready;
+        }
+
+        // --- IMPORTACIÓN ---
+        async function getAccessGroupId(name) {
+            const { host, apiKey } = state.config;
+            const url = `${host}/api/access_groups?name=${encodeURIComponent(name)}&limit=1`;
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.length === 0) throw new Error(`No encontrado`);
+                return data[0].id;
+            } catch (e) {
+                throw new Error(e.message);
+            }
+        }
+
+        function buildCardholder(row) {
+            const get = (col) => row[state.mapping[col]] || '';
+            const payload = {
+                firstName: get('firstName'),
+                lastName: get('lastName')
+            };
+
+            const email = get('email'); if (email) payload.email = email;
+            const phone = get('phone'); if (phone) payload.phone = phone;
+            const companyId = get('companyId'); if (companyId) payload.companyId = companyId;
+            const siteCode = get('siteCode'); if (siteCode) payload.siteCode = siteCode;
+            const cardNumber = get('cardNumber');
+            if (cardNumber) {
+                payload.cards = [{ cardNumber, cardType: "Default" }];
+            }
+            const accessGroupId = get('accessGroup');
+            if (accessGroupId) {
+                payload.accessGroups = [{ id: accessGroupId }];
+            }
+
+            return payload;
+        }
+
+        async function createCardholder(cardholder) {
+            const { host, apiKey } = state.config;
+            const url = `${host}/api/cardholders`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(cardholder)
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message || err.error || `HTTP ${response.status}`);
+            }
+            return response.json();
+        }
+
+        async function startImport() {
+            if (!validateMapping()) {
+                showError('Debes mapear First Name y Last Name');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Procesando...';
+
+            state.importId = Date.now().toString();
+            const total = state.csvData.length;
+            let success = 0, failed = 0, errors = [];
+
+            setActiveScreen('importScreen');
+            updateProgress(0);
+
+            const agCache = {};
+
+            for (let i = 0; i < total; i++) {
+                const row = state.csvData[i];
+                try {
+                    if (state.mapping.accessGroup && row[state.mapping.accessGroup]) {
+                        const name = row[state.mapping.accessGroup];
+                        if (!agCache[name]) {
+                            agCache[name] = await getAccessGroupId(name);
+                            log(`[AG] ${name} → ${agCache[name]}`);
+                        }
+                        row[state.mapping.accessGroup] = agCache[name];
+                    }
+
+                    const cardholder = buildCardholder(row);
+                    await createCardholder(cardholder);
+                    success++;
+                } catch (e) {
+                    failed++;
+                    errors.push(`Fila ${i+2}: ${e.message}`);
+                    log(`[ERR] Fila ${i+2}: ${e.message}`);
+                }
+                updateProgress(Math.round(((i+1)/total)*100));
+            }
+
+            saveImportRecord(state.fileName, total, success, failed, failed===0?'completed':'partial');
+            btn.disabled = false;
+            btn.textContent = '🚀 Iniciar Importación';
+            log(`[Import] Completa: ${success} OK, ${failed} FAIL`);
+            if (errors.length > 0) {
+                log('[Errores]\n' + errors.slice(0,10).join('\n'));
+                if (errors.length > 10) log(`... y ${errors.length-10} más`);
+            }
+            loadHistory();
+            setTimeout(() => setActiveScreen('historyScreen'), 2000);
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const total = state.csvData?.length || 0;
+            document.getElementById('progressTotal').textContent = total;
+            document.getElementById('progressSuccess').textContent = Math.round((percent/100)*total);
+        }
+
+        // --- HISTORIAL ---
+        function saveImportRecord(fileName, total, success, failed, status) {
+            const recs = JSON.parse(localStorage.getItem('import_history') || '[]');
+            recs.unshift({
+                id: state.importId,
+                date: new Date().toISOString(),
+                fileName, total, success, failed, status
+            });
+            localStorage.setItem('import_history', JSON.stringify(recs.slice(0, 50)));
+        }
+
+        function loadHistory() {
+            const recs = JSON.parse(localStorage.getItem('import_history') || '[]');
+            const tbody = document.getElementById('historyTable');
+            if (recs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray-500);">No hay registros</td></tr>';
+                return;
+            }
+            tbody.innerHTML = recs.map(r => `
+                <tr>
+                    <td>${new Date(r.date).toLocaleString()}</td>
+                    <td>${r.fileName}</td>
+                    <td>${r.total}</td>
+                    <td><span class="badge badge-success">${r.success}</span></td>
+                    <td><span class="badge badge-danger">${r.failed}</span></td>
+                    <td><span class="badge ${r.status==='completed'?'badge-success':'badge-warning'}">${r.status}</span></td>
+                    <td><button class="btn btn-danger" style="padding:0.25rem 0.5rem;font-size:0.8rem;" onclick="deleteRecord('${r.id}')">🗑️</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteRecord(id) {
+            const recs = JSON.parse(localStorage.getItem('import_history') || '[]');
+            const filtered = recs.filter(r => r.id !== id);
+            localStorage.setItem('import_history', JSON.stringify(filtered));
+            loadHistory();
+        }
+
+        // --- INICIALIZACIÓN ---
+        function init() {
+            initDropzone();
+            if (state.config.host && state.config.apiKey) {
+                document.getElementById('apiHost').value = state.config.host;
+                document.getElementById('apiKey').value = state.config.apiKey;
+                setActiveScreen('uploadScreen');
+                updateStepIndicator('upload');
+            } else {
+                setActiveScreen('configScreen');
+                updateStepIndicator('config');
+            }
+            loadHistory();
+            log('[Sistema] Aplicación lista');
+        }
+
+        init();
+    </script>
+</body>
+</html>

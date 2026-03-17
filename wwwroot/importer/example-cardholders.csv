@@ -1,0 +1,6 @@
+firstName,lastName,cardNumber,accessGroup,email,phone,companyId,siteCode
+Juan,Pérez,12345678,Empleados,juan@empresa.com,+1234567890,EMP001,SITE01
+María,García,87654321,Visitantes,maria@example.com,+1987654321,EMP002,SITE02
+Carlos,Rodríguez,11223344,Empleados,carlos@empresa.com,+1112233445,EMP003,SITE01
+Ana,López,99887766,Contratistas,ana@contractor.com,+1555666777,EMP004,SITE03
+Pedro,Martínez,55443322,Empleados,pedro@empresa.com,+1444333222,EMP005,SITE01
