@@ -1,6 +1,6 @@
 using CsvHelper;
 using CsvHelper.Configuration;
-using CsvHelper.TypeConversion;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 
@@ -24,49 +24,55 @@ public class ImportService
     public async Task<ImportResult> ImportFromCsvAsync(Stream csvStream, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
     {
         var result = new ImportResult();
-        var errors = new List<ImportError>();
+        var errors = new ConcurrentBag<ImportError>();
         var records = new List<Dictionary<string, string>>();
+        int imported = 0;
 
-        // Parse CSV with CsvHelper
         using var reader = new StreamReader(csvStream, Encoding.UTF8);
         using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
             IgnoreBlankLines = true,
             TrimOptions = TrimOptions.Trim,
-            MissingFieldFound = null, // Ignore missing fields
-            HeaderValidated = null,   // Ignore header validation
+            MissingFieldFound = null,
+            HeaderValidated = null,
             Delimiter = ","
         });
 
-        // Read header
         await csv.ReadAsync();
         csv.ReadHeader();
-        var headers = csv.HeaderRecord;
 
-        // Validate mapping against headers (case-insensitive)
-        var normalizedHeaders = headers.Select(h => h.Trim().ToLowerInvariant()).ToArray();
+        var headers = csv.HeaderRecord ?? Array.Empty<string>();
+
+        var normalizedHeaders = headers
+            .Select(h => h?.Trim().ToLowerInvariant() ?? string.Empty)
+            .ToArray();
+
         var normalizedMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var kvp in mapping)
         {
             var key = kvp.Key;
             var value = kvp.Value;
-            // Find header index (case-insensitive)
-            var idx = Array.FindIndex(normalizedHeaders, h => h.Equals(key.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
+
+            var idx = Array.FindIndex(
+                normalizedHeaders,
+                h => h.Equals(key.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
+
             if (idx >= 0)
             {
-                normalizedMapping[headers[idx]] = value; // Use original header name for index
+                normalizedMapping[headers[idx]] = value;
             }
             else
             {
-                _logger.LogWarning($"Mapping column '{key}' not found in CSV header. Available: {string.Join(", ", headers)}");
+                _logger.LogWarning("Mapping column '{Column}' not found in CSV header. Available: {Headers}",
+                    key, string.Join(", ", headers));
             }
         }
 
-        // Read all records
         while (await csv.ReadAsync())
         {
-            if (cancellationToken.IsCancellationRequested) break;
+            if (cancellationToken.IsCancellationRequested)
+                break;
 
             var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var header in headers)
@@ -78,13 +84,16 @@ public class ImportService
 
         result.Total = records.Count;
 
-        // Process in batches
         var batches = records.Chunk(_batchSize);
         foreach (var batch in batches)
         {
-            if (cancellationToken.IsCancellationRequested) break;
+            if (cancellationToken.IsCancellationRequested)
+                break;
 
-            var semaphore = new SemaphoreSlim(_maxDegreeOfParallelism);
+            using var semaphore = new SemaphoreSlim(_maxDegreeOfParallelism);
+
+            var baseRowNumber = result.Processed + 2;
+
             var tasks = batch.Select(async (record, index) =>
             {
                 await semaphore.WaitAsync(cancellationToken);
@@ -92,27 +101,29 @@ public class ImportService
                 {
                     var cardholder = MapCardholder(record, normalizedMapping);
                     var validation = ValidateCardholder(cardholder);
+
                     if (!validation.IsValid)
                     {
                         errors.Add(new ImportError
                         {
-                            Row = result.Processed + index + 2, // +2 because header + 1-based
+                            Row = baseRowNumber + index,
                             Error = validation.ErrorMessage ?? "Validation failed"
                         });
                         return;
                     }
 
                     await _client.CreateCardholderAsync(cardholder);
-                    Interlocked.Increment(ref result.Imported);
+                    Interlocked.Increment(ref imported);
                 }
                 catch (Exception ex)
                 {
                     errors.Add(new ImportError
                     {
-                        Row = result.Processed + index + 2,
+                        Row = baseRowNumber + index,
                         Error = ex.Message
                     });
-                    _logger.LogError(ex, "Failed to import row {Row}", result.Processed + index + 2);
+
+                    _logger.LogError(ex, "Failed to import row {Row}", baseRowNumber + index);
                 }
                 finally
                 {
@@ -124,8 +135,12 @@ public class ImportService
             result.Processed += batch.Length;
         }
 
+        result.Imported = imported;
         result.Failed = errors.Count;
-        result.Errors = errors.Take(10).ToList();
+        result.Errors = errors
+            .OrderBy(e => e.Row)
+            .Take(10)
+            .ToList();
 
         return result;
     }
@@ -145,11 +160,19 @@ public class ImportService
             }
         }
 
-        // Ensure required fields
-        if (!cardholder.ContainsKey("firstName") && row.TryGetValue("firstName", out var fn) && !string.IsNullOrWhiteSpace(fn))
+        if (!cardholder.ContainsKey("firstName") &&
+            row.TryGetValue("firstName", out var fn) &&
+            !string.IsNullOrWhiteSpace(fn))
+        {
             cardholder["firstName"] = fn.Trim();
-        if (!cardholder.ContainsKey("lastName") && row.TryGetValue("lastName", out var ln) && !string.IsNullOrWhiteSpace(ln))
+        }
+
+        if (!cardholder.ContainsKey("lastName") &&
+            row.TryGetValue("lastName", out var ln) &&
+            !string.IsNullOrWhiteSpace(ln))
+        {
             cardholder["lastName"] = ln.Trim();
+        }
 
         return cardholder;
     }
@@ -158,6 +181,7 @@ public class ImportService
     {
         if (!cardholder.ContainsKey("firstName") || string.IsNullOrWhiteSpace(cardholder["firstName"]?.ToString()))
             return (false, "Missing required field: firstName");
+
         if (!cardholder.ContainsKey("lastName") || string.IsNullOrWhiteSpace(cardholder["lastName"]?.ToString()))
             return (false, "Missing required field: lastName");
 

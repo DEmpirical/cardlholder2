@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\.gitignore",
+      "PackagePath": "staticwebassets\\.gitignore"
+    },
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\README.md",
+      "PackagePath": "staticwebassets\\README.md"
+    },
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\README_IMPORTER.md",
+      "PackagePath": "staticwebassets\\README_IMPORTER.md"
+    },
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\importer\\example-cardholders.csv",
+      "PackagePath": "staticwebassets\\importer\\example-cardholders.csv"
+    },
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\importer\\index.html.bak",
+      "PackagePath": "staticwebassets\\importer\\index.html.bak"
+    },
+    {
+      "Id": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.GallagherCardholders.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.GallagherCardholders.props",
+      "PackagePath": "build\\GallagherCardholders.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.GallagherCardholders.props",
+      "PackagePath": "buildMultiTargeting\\GallagherCardholders.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.GallagherCardholders.props",
+      "PackagePath": "buildTransitive\\GallagherCardholders.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

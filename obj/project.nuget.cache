@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "0eTu3+N7hbA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Administrador\\Documents\\ccweb-backend\\cardlholder2\\GallagherCardholders.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrador\\.nuget\\packages\\csvhelper\\33.1.0\\csvhelper.33.1.0.nupkg.sha512"
+  ],
+  "logs": []
+}
